@@ -158,6 +158,10 @@
 
     this.search = function(cb) {
       // TODO: Implement this.
+      $.get("http://localhost:5000/search",{hello:"hello"},function(data,status){
+        var err = null;
+        cb(err,data.products);
+      });
     };
   };
 

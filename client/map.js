@@ -9,10 +9,10 @@
   };
 
   /*
-   * Converts an HSL color to RGB.
-   * @param {Number} h The hue value.
-   * @param {Number} s The saturation value.
-   * @param {Number} s The lightness value.
+  * Converts an HSL color to RGB.
+  * @param {Number} h The hue value.
+  * @param {Number} s The saturation value.
+  * @param {Number} s The lightness value.
   */
   var hslToRgb = function(h, s, l){
     var r, g, b;
@@ -32,11 +32,11 @@
   };
 
   /*
-   * Converts an HSL color to an RGB hex representation.
-   * @param {Number} h The hue value.
-   * @param {Number} s The saturation value.
-   * @param {Number} s The lightness value.
-   */
+  * Converts an HSL color to an RGB hex representation.
+  * @param {Number} h The hue value.
+  * @param {Number} s The saturation value.
+  * @param {Number} s The lightness value.
+  */
   var hslToHex = function(h, s, l) {
     return '#' + hslToRgb(h, s, l).map(function(v) {
       return parseInt(v).toString(16);
@@ -45,17 +45,17 @@
 
 
   /*
-   * ProductMap
-   * ==========
-   * Wraps the Mapbox map. Responsible for plotting products and notifying the rest of
-   * the application about search marker movement.
-   */
+  * ProductMap
+  * ==========
+  * Wraps the Mapbox map. Responsible for plotting products and notifying the rest of
+  * the application about search marker movement.
+  */
   var ProductMap = function(center, searchRadius) {
     var self = this;
     EventEmitter2.call(self);
 
     L.mapbox.accessToken = 'pk.eyJ1IjoiYWxleG1pY3RpYyIsImEiOiIwNjA5YzY4OTRhOTlkZmZiYW' +
-                           'MwOTVkYTQyODE0MWM1OSJ9.qlmkUkppOWpEcLjvsBqkZA';
+    'MwOTVkYTQyODE0MWM1OSJ9.qlmkUkppOWpEcLjvsBqkZA';
 
     var initMap = function() {
       var options = {minZoom: 8, maxZoom: 18};
@@ -145,10 +145,10 @@
 
 
   /*
-   * Searcher
-   * ==========
-   * Performs API search requests.
-   */
+  * Searcher
+  * ==========
+  * Performs API search requests.
+  */
   var Searcher = function(prefs) {
     var self = this;
     EventEmitter2.call(self);
@@ -157,20 +157,60 @@
     this.prefs = prefs;
 
     this.search = function(cb) {
-      // TODO: Implement this.
-      $.get("http://localhost:5000/search",{hello:"hello"},function(data,status){
+      //Callbacks & helpers
+      var checkTags = function(tags){
+        if(!Array.isArray(tags))  return true;
+        tags.forEach(function(tag){
+          if(typeof tag !== 'string') return true;
+        });
+        return false
+      }
+
+      var validateSearchData = function(Obj){
+        console.log("entering validation");
+        if(typeof Obj.count !== 'number'   || typeof Obj.radius !== 'number'  ||
+        typeof Obj.lat == !'number' || typeof Obj.lng !== 'number' ||
+        checkTags(Obj.tags))
+        {
+          throw "Unreasonable search parameters, please try again!";
+        }
+      }
+
+      var displayResults = function(data,status){
+        console.log("displaying results");
         var err = null;
+        console.log(data);
+        console.log(status);
         cb(err,data.products);
-      });
+      };
+
+
+      //Retrieve search parameters
+      requestObj ={
+        count : this.prefs.count,
+        radius : this.prefs.radius,
+        lat : this.prefs.position.lat,
+        lng : this.prefs.position.lng,
+        tags:this.prefs.tags,
+      };
+      try{
+        validateSearchData(requestObj);
+        console.log("sending request");
+        $.get("http://localhost:5000/search",requestObj, displayResults);
+        console.log("request sent");
+      }catch(e){
+        return alert(e);
+      }
+
     };
   };
 
 
   /*
-   * SearchControls
-   * ==============
-   * Wraps the control box and adapts DOM events to application events.
-   */
+  * SearchControls
+  * ==============
+  * Wraps the control box and adapts DOM events to application events.
+  */
   var SearchControls = function(prefs) {
     var self = this;
     EventEmitter2.call(self);
@@ -215,8 +255,8 @@
 
 
   /*
-   * Initializes the application and hooks up all the event handlers.
-   */
+  * Initializes the application and hooks up all the event handlers.
+  */
   var init = function() {
     var prefs = {
       count: 10,
@@ -230,6 +270,7 @@
     var map = new ProductMap(prefs.position, prefs.radius);
 
     controls.on('search', function() {
+      console.log("clicking hrere");
       searcher.search(function(err, products) {
         if (err) return alert(err);
         map.plot(products);

@@ -178,15 +178,27 @@
 
       var displayResults = function(data,status){
         console.log("displaying results");
-        var err = null;
-        console.log(data);
-        console.log(status);
-        cb(err,data.products);
+        if(data.errorMessage){
+          cb(data.errorMessage, null);
+        }else{
+          cb(null,data.products);
+        }
       };
 
+      var errorAlert = function(){
+        cb("Whoops! An uncaught error has occured, please call a technitian!", null);
+      }
+
+      var addLoadingAnimation = function(){
+        $('.loading').removeClass("hidden");
+      }
+
+      var removeLoadingAnimation = function(){
+        $('.loading').addClass("hidden");
+      }
 
       //Retrieve search parameters
-      requestObj ={
+      requestObj = {
         count : this.prefs.count,
         radius : this.prefs.radius,
         lat : this.prefs.position.lat,
@@ -196,112 +208,118 @@
       try{
         validateSearchData(requestObj);
         console.log("sending request");
-        $.get("http://localhost:5000/search",requestObj, displayResults);
-        console.log("request sent");
-      }catch(e){
-        return alert(e);
-      }
+        $.ajax({
+          url : "http://localhost:5000/search",
+          data : requestObj,
+          success : displayResults,
+          beforeSend : addLoadingAnimation,
+          error : errorAlert }).always(removeLoadingAnimation);
+          console.log("request sent");
+        }catch(e){
+          console.log("catching");
+          return alert(e);
+        }
 
-    };
-  };
-
-
-  /*
-  * SearchControls
-  * ==============
-  * Wraps the control box and adapts DOM events to application events.
-  */
-  var SearchControls = function(prefs) {
-    var self = this;
-    EventEmitter2.call(self);
-
-    var $search = $('#controls .search');
-
-    // Set initial values.
-    var $radius = $('#controls .radius').val(prefs.radius).selectize();
-    var $count = $('#controls .count').val(prefs.count).selectize();
-    var $tags = $('#controls .tags').selectize({
-      delimiter: ',',
-      persist: false,
-      create: function(input) {
-        return {value: input, text: input};
-      }
-    });
-
-    $search.on('click', function() {
-      self.emit('search');
-      return false;
-    });
-
-    $radius.on('change', function(e) {
-      var val = $(e.target).val();
-      self.emit('change:radius', parseInt(val));
-      return false;
-    });
-
-    $count.on('change', function(e) {
-      var val = $(e.target).val();
-      self.emit('change:count', parseInt(val));
-      return false;
-    });
-
-    $tags.on('change', function(e) {
-      var val = $(e.target).val();
-      var valArray = [];
-      if (val) valArray = val.split(',');
-      self.emit('change:tags', valArray);
-    });
-  };
-
-
-  /*
-  * Initializes the application and hooks up all the event handlers.
-  */
-  var init = function() {
-    var prefs = {
-      count: 10,
-      radius: 500,
-      position: L.latLng(59.3325800, 18.0649000), // Hello Stockholm!
-      tags: []
+      };
     };
 
-    var controls = new SearchControls(prefs);
-    var searcher = new Searcher(prefs);
-    var map = new ProductMap(prefs.position, prefs.radius);
 
-    controls.on('search', function() {
-      console.log("clicking hrere");
-      searcher.search(function(err, products) {
-        if (err) return alert(err);
-        map.plot(products);
+    /*
+    * SearchControls
+    * ==============
+    * Wraps the control box and adapts DOM events to application events.
+    */
+    var SearchControls = function(prefs) {
+      var self = this;
+      EventEmitter2.call(self);
+
+      var $search = $('#controls .search');
+
+      // Set initial values.
+      var $radius = $('#controls .radius').val(prefs.radius).selectize();
+      var $count = $('#controls .count').val(prefs.count).selectize();
+      var $tags = $('#controls .tags').selectize({
+        delimiter: ',',
+        persist: false,
+        create: function(input) {
+          return {value: input, text: input};
+        }
       });
-    });
 
-    controls.on('change:radius', function(radius) {
-      searcher.prefs.radius = radius;
-      map.area.setRadius(radius);
-    });
+      $search.on('click', function() {
+        self.emit('search');
+        return false;
+      });
 
-    controls.on('change:count', function(count) {
-      searcher.prefs.count = count;
-    });
+      $radius.on('change', function(e) {
+        var val = $(e.target).val();
+        self.emit('change:radius', parseInt(val));
+        return false;
+      });
 
-    controls.on('change:tags', function(tags) {
-      searcher.prefs.tags = tags;
-    });
+      $count.on('change', function(e) {
+        var val = $(e.target).val();
+        self.emit('change:count', parseInt(val));
+        return false;
+      });
 
-    map.on('change:searchpos', function(latlng) {
-      searcher.prefs.position = latlng;
-    });
-  };
+      $tags.on('change', function(e) {
+        var val = $(e.target).val();
+        var valArray = [];
+        if (val) valArray = val.split(',');
+        self.emit('change:tags', valArray);
+      });
+    };
 
 
-  // Inherit from `EventEmitter2`.
-  ProductMap.prototype = Object.create(EventEmitter2.prototype);
-  Searcher.prototype = Object.create(EventEmitter2.prototype);
-  SearchControls.prototype = Object.create(EventEmitter2.prototype);
+    /*
+    * Initializes the application and hooks up all the event handlers.
+    */
+    var init = function() {
+      var prefs = {
+        count: 10,
+        radius: 500,
+        position: L.latLng(59.3325800, 18.0649000), // Hello Stockholm!
+        tags: []
+      };
+
+      var controls = new SearchControls(prefs);
+      var searcher = new Searcher(prefs);
+      var map = new ProductMap(prefs.position, prefs.radius);
+
+      controls.on('search', function() {
+        console.log("clicking hrere");
+        searcher.search(function(err, products) {
+          if (err) return alert(err);
+          map.plot(products);
+        });
+      });
+
+      controls.on('change:radius', function(radius) {
+        searcher.prefs.radius = radius;
+        map.area.setRadius(radius);
+      });
+
+      controls.on('change:count', function(count) {
+        searcher.prefs.count = count;
+      });
+
+      controls.on('change:tags', function(tags) {
+        searcher.prefs.tags = tags;
+      });
+
+      map.on('change:searchpos', function(latlng) {
+        searcher.prefs.position = latlng;
+      });
+    };
 
 
-  // Boot the application.
-  init();
-}());
+    // Inherit from `EventEmitter2`.
+    ProductMap.prototype = Object.create(EventEmitter2.prototype);
+    Searcher.prototype = Object.create(EventEmitter2.prototype);
+    SearchControls.prototype = Object.create(EventEmitter2.prototype);
+
+
+    // Boot the application.
+    init();
+  }());

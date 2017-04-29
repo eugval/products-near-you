@@ -2,13 +2,18 @@
 
 import os
 from flask import Flask
-from server.api import api
-
+from server.api import api#, data_path
+#from cache import cache
 
 def create_app(settings_overrides=None):
     app = Flask(__name__)
     configure_settings(app, settings_overrides)
     configure_blueprints(app)
+
+    #setup cache
+    #app.config['CACHE_TYPE'] = 'simple'
+    #cache.init_app(app)
+    #setup_cache()
     return app
 
 
@@ -26,3 +31,6 @@ def configure_settings(app, settings_override):
 
 def configure_blueprints(app):
     app.register_blueprint(api)
+
+
+#def setup_cache()

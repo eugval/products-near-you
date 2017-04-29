@@ -2,7 +2,8 @@
 
 from flask import Blueprint, current_app, jsonify, request
 from geopy.distance import vincenty
-import csv, time
+
+import csv,#,time
 
 
 api = Blueprint('api', __name__)
@@ -12,9 +13,9 @@ def data_path(filename):
     data_path = current_app.config['DATA_PATH']
     return u"%s/%s" % (data_path, filename)
 
-def findShopsInRadius(radius, userCoords):
+def find_shops_in_radius(radius, userCoords, shopsPath):
     shopsInRadius = []
-    with open('./data/shops.csv', 'rb') as shopsFile:
+    with open(shopsPath, 'rb') as shopsFile:
         reader = csv.reader(shopsFile)
         next(reader , None)
         for row in reader:
@@ -25,10 +26,10 @@ def findShopsInRadius(radius, userCoords):
     return shopsInRadius
 
 
-def keepShopsWithTag(shopsInRadius, tags):
+def keep_shops_with_tag(shopsInRadius, tags, taggingsPath, tagsPath):
     tagIds = []
     validShops = []
-    with open('./data/tags.csv','rb') as tagFile:
+    with open(tagsPath,'rb') as tagFile:
         reader = csv.reader(tagFile)
         next(reader, None)
         for row in reader:
@@ -40,7 +41,7 @@ def keepShopsWithTag(shopsInRadius, tags):
     if(not tagIds):
         return []
 
-    with open('./data/taggings.csv','rb') as taggingsFile:
+    with open(taggingsPath,'rb') as taggingsFile:
         reader =  csv.reader(taggingsFile)
         next(reader, None)
         for row in reader:
@@ -51,20 +52,20 @@ def keepShopsWithTag(shopsInRadius, tags):
     return validShops
 
 
-def getValidShops(radius, userCoords, tags):
+def get_valid_shops(radius, userCoords, tags, shopsPath, taggingsPath, tagsPath):
     if(tags):
-        shopsInRadius = findShopsInRadius(radius, userCoords)
-        return keepShopsWithTag(shopsInRadius,tags)
+        shopsInRadius = find_shops_in_radius(radius, userCoords, shopsPath)
+        return keep_shops_with_tag(shopsInRadius,tags, taggingsPath, tagsPath)
     else:
-        return findShopsInRadius(radius, userCoords)
+        return find_shops_in_radius(radius, userCoords, shopsPath)
 
-def getProducts(validShops, count):
+def get_products(validShops, count, productsPath):
     products = [];
 
     if(not validShops):
         return []
 
-    with open('./data/products.csv','rb') as productsFile:
+    with open(productsPath,'rb') as productsFile:
         reader = csv.reader(productsFile)
         next(reader, None)
         for row in reader:
@@ -78,7 +79,7 @@ def getProducts(validShops, count):
     return products[0:count]
 
 
-def formResponse(products, error):
+def form_response(products, error):
     if(not products):
         products = []
 
@@ -90,14 +91,14 @@ def formResponse(products, error):
     return response
 
 
-def isListOfStrings(lst):
+def is_list_of_strings(lst):
         return isinstance(lst, list) and all(isinstance(elem, basestring) for elem in lst)
 
-def processParameters(userCoords, radius, count, tags):
+def process_parameters(userCoords, radius, count, tags):
     userCoords = (float(userCoords[0]), float(userCoords[1]))
     radius = float(radius)
     count = int(count)
-    if(not isListOfStrings(tags)):
+    if(not is_list_of_strings(tags)):
         raise ValueError
     return (userCoords, radius, count)
 
@@ -112,14 +113,14 @@ def search():
     print(tags)
 
     try:
-         userCoords, radius, count = processParameters(userCoords,radius,count,tags)
+         userCoords, radius, count = process_parameters(userCoords,radius,count,tags)
     except ValueError:
-        return formResponse(None, "Query parameters are malformed, please try again!")
+        return form_response(None, "Query parameters are malformed, please try again!")
 
     #Get the shops in radius, with the correct tags
-    validShops = getValidShops(radius, userCoords, tags)
+    validShops = get_valid_shops(radius, userCoords, tags, SHOPS_PATH, TAGGINGS_PATH, TAGS_PATH)
 
     #Get the count most popular products sold across these shops
-    products = getProducts(validShops,count)
+    products = get_products(validShops,count, PRODUCTS_PATH)
 
-    return formResponse(products, None)
+    return form_response(products, None)

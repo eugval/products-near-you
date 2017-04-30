@@ -7,3 +7,4 @@ py==1.4.27
 pytest==2.7.0
 wsgiref==0.1.2
 geopy==1.11.0
+flask-cache

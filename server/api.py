@@ -2,8 +2,9 @@
 
 from flask import Blueprint, current_app, jsonify, request
 from geopy.distance import vincenty
-
-import csv,#,time
+from operator import itemgetter
+from cache import cache
+import  time, csv
 
 
 api = Blueprint('api', __name__)
@@ -13,67 +14,143 @@ def data_path(filename):
     data_path = current_app.config['DATA_PATH']
     return u"%s/%s" % (data_path, filename)
 
-def find_shops_in_radius(radius, userCoords, shopsPath):
-    shopsInRadius = []
-    with open(shopsPath, 'rb') as shopsFile:
+
+def setup_cache():
+    read_products()
+    read_shops()
+    read_taggings()
+    read_tags()
+    match_tags_per_shop()
+
+
+@cache.cached(key_prefix='read_tags')
+def read_tags():
+    tags = {}
+    with open(data_path('tags.csv'),'rb') as tagFile:
+        reader = csv.reader(tagFile)
+        next(reader, None)
+        for row in reader:
+            tags[row[1]] = row[0]
+    print("finished calling read_tags")
+    return tags
+
+@cache.cached(key_prefix='read_shops')
+def read_shops():
+    shops=[]
+    with open(data_path('shops.csv'), 'rb') as shopsFile:
         reader = csv.reader(shopsFile)
         next(reader , None)
         for row in reader:
-            if(vincenty(userCoords, (float(row[2]),float(row[3]))).meters < radius):
-                shopsInRadius.append([row[0],row[2],row[3]])
+            shops.append([row[0],row[2],row[3]])
+    print("finished calling read_shops")
+    return shops
+
+@cache.cached(key_prefix='read_taggings')
+def read_taggings():
+    taggings = []
+    with open(data_path('taggings.csv'),'rb') as taggingsFile:
+        reader =  csv.reader(taggingsFile)
+        next(reader, None)
+        for row in reader:
+            taggings.append([row[1],row[2]])
+    print("finished calling read_taggings")
+    return taggings
+
+
+@cache.cached(key_prefix='read_products')
+def read_products():
+    products = []
+    with open(data_path('products.csv'),'rb') as productsFile:
+        reader = csv.reader(productsFile)
+        next(reader, None)
+        for row in reader:
+            products.append([row[1],row[2],row[3]])
+    print("finished calling read_products")
+    return sorted(products,key=itemgetter(2), reverse=True)
+
+@cache.cached(key_prefix='match_tags_per_shop')
+def match_tags_per_shop():
+    shops = read_shops()
+    taggings = read_taggings()
+
+    tagsPerShop = {}
+
+    for shop in shops:
+        tagsPerShop[shop[0]]=[]
+        for tagging in taggings:
+            if(shop[0] == tagging[0]):
+                tagsPerShop[shop[0]].append(tagging[1])
+    print("finished calling match_tags_per_shop")
+    return tagsPerShop
+
+def find_shops_in_radius(radius, userCoords):
+    allShops = read_shops()
+    shopsInRadius = []
+    for shop in allShops:
+        if(vincenty(userCoords, (float(shop[1]),float(shop[2]))).meters < radius):
+            shopsInRadius.append([shop[0],shop[1],shop[2]])
     print("the number of shops in radius is:")
     print(len(shopsInRadius))
     return shopsInRadius
 
 
-def keep_shops_with_tag(shopsInRadius, tags, taggingsPath, tagsPath):
+def keep_shops_with_tag(shopsInRadius, tags):
+    allTags = read_tags()
+    allTaggings = read_taggings()
     tagIds = []
     validShops = []
-    with open(tagsPath,'rb') as tagFile:
-        reader = csv.reader(tagFile)
-        next(reader, None)
-        for row in reader:
-            if row[1] in tags:
-                tagIds.append(row[0])
+    tagsPerShop = match_tags_per_shop()
+    for tag in tags:
+        tagId = allTags.get(tag)
+        if(tagId):
+            tagIds.append(tagId)
 
     print("tag IDs number is")
     print(len(tagIds))
     if(not tagIds):
         return []
 
-    with open(taggingsPath,'rb') as taggingsFile:
-        reader =  csv.reader(taggingsFile)
-        next(reader, None)
-        for row in reader:
-            for shop in shopsInRadius:
-                if(row[1] == shop[0]  and row[2] in tagIds):
-                    validShops.append([shop[0],shop[1],shop[2]])
+    for shop in shopsInRadius:
+        if(any(i in tagIds for i in tagsPerShop[shop[0]])):
+            validShops.append([shop[0],shop[1],shop[2]])
+
+
+    print('the valid shops number is ')
+    print(len(validShops))
 
     return validShops
 
 
-def get_valid_shops(radius, userCoords, tags, shopsPath, taggingsPath, tagsPath):
+def get_valid_shops(radius, userCoords, tags):
     if(tags):
-        shopsInRadius = find_shops_in_radius(radius, userCoords, shopsPath)
-        return keep_shops_with_tag(shopsInRadius,tags, taggingsPath, tagsPath)
+        t11=time.clock()
+        shopsInRadius = find_shops_in_radius(radius, userCoords)
+        t12=time.clock()
+        print('time for find_shops_in_radius', t12-t11)
+        temp = keep_shops_with_tag(shopsInRadius,tags)
+        t13=time.clock()
+        print('time for keep_shops_with_tag', t13-t12)
+        return temp
     else:
-        return find_shops_in_radius(radius, userCoords, shopsPath)
+        return find_shops_in_radius(radius, userCoords)
 
-def get_products(validShops, count, productsPath):
-    products = [];
+def get_products(validShops, count):
+    allProducts = read_products()
+    products = []
 
     if(not validShops):
         return []
 
-    with open(productsPath,'rb') as productsFile:
-        reader = csv.reader(productsFile)
-        next(reader, None)
-        for row in reader:
-            for shop in validShops:
-                if(row[1] == shop[0]):
-                    products.append({"title": row[2], "popularity": row[3], "shop": {"lat": shop[1], "lng": shop[2]}})
 
-    sorted(products, key=lambda prod: prod['popularity'])
+    for product in allProducts:
+        for shop in validShops:
+            if(product[0] == shop[0]):
+                products.append({"title": product[1], "popularity": product[2], "shop": {"lat": shop[1], "lng": shop[2]}})
+
+        if(len(products)>=count):
+            break
+
+
     print("the full product array length is")
     print(len(products))
     return products[0:count]
@@ -105,22 +182,32 @@ def process_parameters(userCoords, radius, count, tags):
 
 @api.route('/search', methods=['GET'])
 def search():
+    t0=time.clock()
     #Search parameters
     userCoords = (request.args.get('lat'),request.args.get('lng'))
     radius = request.args.get('radius')
     count = request.args.get('count')
     tags = request.args.getlist('tags[]')
-    print(tags)
+
 
     try:
          userCoords, radius, count = process_parameters(userCoords,radius,count,tags)
     except ValueError:
         return form_response(None, "Query parameters are malformed, please try again!")
 
+    t1 =time.clock()
     #Get the shops in radius, with the correct tags
-    validShops = get_valid_shops(radius, userCoords, tags, SHOPS_PATH, TAGGINGS_PATH, TAGS_PATH)
-
+    validShops = get_valid_shops(radius, userCoords, tags)
+    t2=time.clock()
+    print('valid shops time ellapsed: ', t2-t1)
     #Get the count most popular products sold across these shops
-    products = get_products(validShops,count, PRODUCTS_PATH)
+    products = get_products(validShops,count)
+    t3=time.clock()
+
+    print('getProducts time ellapsed: ', t3-t2)
+
+
+    t4=time.clock()
+    print('final time ellapsed: ', t4-t0)
 
     return form_response(products, None)

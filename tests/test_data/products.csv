@@ -1,0 +1,4 @@
+id,shop_id,title,popularity,quantity
+product_1,shop_1,product1,1,10
+product_2,shop_2,product2,2,20
+product_3,shop_3,product3,3,30

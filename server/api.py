@@ -88,7 +88,7 @@ def find_shops_in_radius(radius, userCoords):
     shopsInRadius = []
     for shop in allShops:
         if(vincenty(userCoords, (float(shop[1]),float(shop[2]))).meters < radius):
-            shopsInRadius.append([shop[0],shop[1],shop[2]])
+            shopsInRadius.append(shop)
     print("the number of shops in radius is:")
     print(len(shopsInRadius))
     return shopsInRadius
@@ -97,9 +97,10 @@ def find_shops_in_radius(radius, userCoords):
 def keep_shops_with_tag(shopsInRadius, tags):
     allTags = read_tags()
     allTaggings = read_taggings()
+    tagsPerShop = match_tags_per_shop()
     tagIds = []
     validShops = []
-    tagsPerShop = match_tags_per_shop()
+
     for tag in tags:
         tagId = allTags.get(tag)
         if(tagId):
@@ -107,12 +108,13 @@ def keep_shops_with_tag(shopsInRadius, tags):
 
     print("tag IDs number is")
     print(len(tagIds))
+
     if(not tagIds):
         return []
 
     for shop in shopsInRadius:
         if(any(i in tagIds for i in tagsPerShop[shop[0]])):
-            validShops.append([shop[0],shop[1],shop[2]])
+            validShops.append(shop)
 
 
     print('the valid shops number is ')
@@ -150,7 +152,6 @@ def get_products(validShops, count):
         if(len(products)>=count):
             break
 
-
     print("the full product array length is")
     print(len(products))
     return products[0:count]
@@ -184,11 +185,11 @@ def process_parameters(userCoords, radius, count, tags):
 def search():
     t0=time.clock()
     #Search parameters
+    print(request)
     userCoords = (request.args.get('lat'),request.args.get('lng'))
     radius = request.args.get('radius')
     count = request.args.get('count')
     tags = request.args.getlist('tags[]')
-
 
     try:
          userCoords, radius, count = process_parameters(userCoords,radius,count,tags)
@@ -205,7 +206,6 @@ def search():
     t3=time.clock()
 
     print('getProducts time ellapsed: ', t3-t2)
-
 
     t4=time.clock()
     print('final time ellapsed: ', t4-t0)

@@ -1,5 +1,8 @@
-Eugene's comments
+Products Near You
 =================
+
+Eugene's comments
+-----------------
 To run the app locally:
 
 1. Run the virtualev and install the requirements listed in requirements.txt
@@ -47,8 +50,6 @@ $ python run_with_profiler.py
 ```
 At every request, profiling information should appear on the terminal
 
-Products Near You
-=================
 
 The purpose of this exercise is to build an API that returns the most popular products
 from shops near you.

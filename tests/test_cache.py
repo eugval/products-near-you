@@ -12,7 +12,7 @@ class TestCache(object):
 
         tagsExpected = {"tag1":"tag_1", "tag2":"tag_2", "tag3":"tag_3"}
 
-        assert t1-t0< 0.00005
+        assert t1-t0< 0.0001
         assert tags ==tagsExpected
 
 
@@ -27,7 +27,7 @@ class TestCache(object):
         ["shop_3","50.01","50.01"]]
 
 
-        assert t1-t0< 0.00005
+        assert t1-t0< 0.0001
         assert shops == shopsExpected
 
 
@@ -41,7 +41,7 @@ class TestCache(object):
         ["shop_2","tag_2"],
         ["shop_3","tag_3"]]
 
-        assert t1-t0< 0.00005
+        assert t1-t0< 0.0001
         assert taggings ==  taggingsExpected
 
     def test_read_products(self):
@@ -54,7 +54,7 @@ class TestCache(object):
         ["shop_2","product2","2"],
         ["shop_1","product1","1"]]
 
-        assert t1-t0< 0.00005
+        assert t1-t0< 0.0001
         assert products == productsExpected
 
 
@@ -69,5 +69,5 @@ class TestCache(object):
         "shop_3":["tag_3"]
         }
 
-        assert t1-t0< 0.00005
+        assert t1-t0< 0.0001
         assert tps == tpsExpected

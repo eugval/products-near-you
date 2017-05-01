@@ -3,7 +3,7 @@ from server.api import *
 import pytest
 import json
 import flask
-from conftest import client, get
+from conftest import app,client,get
 
 app = flask.Flask(__name__)
 
@@ -165,16 +165,36 @@ class TestApiUnits(object):
                                             {"title": "product1", "popularity": "1", "shop": {"lat": "50.002", "lng": "50.002"}},
                                             ]
 
-'''
+
 
 class TestRequests(object):
-    def test_search_request(self):
-        #testClient = client(app, 'http://localhost:5000/search?count=4&radius=1000&lat=50.0&lng=50.0&tags[]=tag1&tags[]=tag3&tags[]=notag')
-        #rv = get(testClient)
+    def test_search_request(app,client,get):
 
-        rv = self.app.get('http://localhost:5000/search?count=4&radius=1000&lat=50.0&lng=50.0&tags[]=tag1&tags[]=tag3&tags[]=notag')
 
-        print(rv)
-        print(rv.data)
-        assert rv.data ==1
-'''
+        response= client.get('/search?count=4&radius=1000&lat=50.0&lng=50.0&tags[]=tag1&tags[]=tag3&tags[]=notag')
+        data = json.loads(response.get_data(as_text=True))
+        assert data["products"] ==  [{"title": "product1", "popularity": "1", "shop": {"lat": "50.002", "lng": "50.002"}}]
+        assert data["errorMessage"] == ''
+
+        response= client.get('/search?count=4&radius=1000&lat[]=50.0&lng=50.0&tags[]=tag1&tags[]=tag3&tags[]=notag')
+        data = json.loads(response.get_data(as_text=True))
+        assert data["products"] ==  []
+        assert data["errorMessage"]=="Query parameters are malformed, please try again!"
+
+
+        response= client.get('/search')
+        data = json.loads(response.get_data(as_text=True))
+        assert data["products"] ==  []
+        assert data["errorMessage"]=="Query parameters are malformed, please try again!"
+
+
+        response= client.get('/search?count=4&radius=1000&lat=50.0&lng=50.0')
+        data = json.loads(response.get_data(as_text=True))
+        assert data["products"] ==  [{"title": "product2", "popularity": "2", "shop": {"lat": "50.005", "lng": "50.005"}},
+                                    {"title": "product1", "popularity": "1", "shop": {"lat": "50.002", "lng": "50.002"}}]
+        assert data["errorMessage"] == ""
+
+        response= client.get('/search?count=1&radius=2000&lat=50.0&lng=50.0')
+        data = json.loads(response.get_data(as_text=True))
+        assert data["products"] ==  [{"title": "product3", "popularity": "3", "shop": {"lat": "50.01", "lng": "50.01"}}]
+        assert data["errorMessage"] == ""

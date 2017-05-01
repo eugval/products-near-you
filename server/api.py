@@ -193,7 +193,7 @@ def search():
 
     try:
          userCoords, radius, count = process_parameters(userCoords,radius,count,tags)
-    except ValueError:
+    except (ValueError, TypeError):
         return form_response(None, "Query parameters are malformed, please try again!")
 
     t1 =time.clock()
@@ -206,6 +206,7 @@ def search():
     t3=time.clock()
 
     print('getProducts time ellapsed: ', t3-t2)
+
 
     t4=time.clock()
     print('final time ellapsed: ', t4-t0)

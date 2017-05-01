@@ -1,0 +1,5 @@
+#!/bin/bash
+# Runs the test suit with coverage report
+
+coverage run --source=server -m  pytest -v
+coverage report

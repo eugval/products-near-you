@@ -5,9 +5,9 @@ Eugene's comments
 -----------------
 To run the app locally:
 
-1. Run the virtualev and install the requirements listed in requirements.txt
+1. Run the virtualev and install the requirements listed in requirements.txt.
 
-2. Activate the server
+2. Activate the server.
 ```
 $ python runserver.py
 
@@ -18,7 +18,7 @@ This is repeated twice on startup because of the reloader which monitors changes
 on source files to help with development. This can be deactivated
 using the use_reloader=False option in Flask's app.run() function.
 
-3. Activate the client
+3. Activate the client.
 ```
 $ cd client
 $ python -m SimpleHTTPServer
@@ -31,24 +31,25 @@ Make sure it runs on port 8000.
 
 To run the tests:
 
-1. Make sure all requirements are installed
+1. Make sure all requirements are installed.
 
-2. run
+2. run :
+
 ```
 $ cd tests
 $ ./run_tests_with_coverage
-
 ```
 
 To run with the profiler:
-
-Follow the steps above but replace step 2. with
+Follow the steps above but replace step 2. with :
 
 ```
 $ python run_with_profiler.py
-
 ```
-At every request, profiling information should appear on the terminal
+At every request, profiling information should appear on the terminal.
+
+
+
 
 
 The purpose of this exercise is to build an API that returns the most popular products

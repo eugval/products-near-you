@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import  time
-from server.api import *
+from server.cache import *
 
 
 class TestCache(object):

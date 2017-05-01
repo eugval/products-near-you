@@ -2,8 +2,8 @@
 
 import os
 from flask import Flask
-from server.api import api, setup_cache
-from cache import cache
+from server.api import api
+from cache import cache, setup_cache
 
 def create_app(settings_overrides=None):
     app = Flask(__name__)

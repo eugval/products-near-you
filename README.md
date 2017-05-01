@@ -37,6 +37,16 @@ $ ./run_tests_with_coverage
 
 ```
 
+To run with the profiler:
+
+Follow the steps above but replace step 2. with
+
+```
+$ python run_with_profiler.py
+
+```
+At every request, profiling information should appear on the terminal
+
 Products Near You
 =================
 

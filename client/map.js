@@ -153,10 +153,11 @@
     var self = this;
     EventEmitter2.call(self);
 
-    // Default preferences.
+    //Default preferences.
     this.prefs = prefs;
 
     this.search = function(cb) {
+
       //Callbacks & helpers
       var checkTags = function(tags){
         if(!Array.isArray(tags))  return true;
@@ -167,7 +168,6 @@
       }
 
       var validateSearchData = function(Obj){
-        console.log("entering validation");
         if(typeof Obj.count !== 'number'   || typeof Obj.radius !== 'number'  ||
         typeof Obj.lat == !'number' || typeof Obj.lng !== 'number' ||
         checkTags(Obj.tags))
@@ -177,7 +177,6 @@
       }
 
       var displayResults = function(data,status){
-        console.log("displaying results");
         if(data.errorMessage){
           cb(data.errorMessage, null);
         }else{
@@ -197,7 +196,7 @@
         $('.loading').addClass("hidden");
       }
 
-      //Retrieve search parameters
+      //Retrieve search parameters and build the request object
       requestObj = {
         count : this.prefs.count,
         radius : this.prefs.radius,
@@ -205,18 +204,17 @@
         lng : this.prefs.position.lng,
         tags:this.prefs.tags,
       };
+
+      //Make an ajax call to the server after validating the data
       try{
         validateSearchData(requestObj);
-        console.log("sending request");
         $.ajax({
-          url : "http://localhost:5000/search",
+          url :"http://localhost:5000/search",
           data : requestObj,
           success : displayResults,
           beforeSend : addLoadingAnimation,
           error : errorAlert }).always(removeLoadingAnimation);
-          console.log("request sent");
         }catch(e){
-          console.log("catching");
           return alert(e);
         }
 
@@ -288,7 +286,6 @@
       var map = new ProductMap(prefs.position, prefs.radius);
 
       controls.on('search', function() {
-        console.log("clicking hrere");
         searcher.search(function(err, products) {
           if (err) return alert(err);
           map.plot(products);

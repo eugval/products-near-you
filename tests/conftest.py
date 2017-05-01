@@ -53,6 +53,7 @@ def humanize_werkzeug_client(client_method):
 @pytest.fixture(scope='session', autouse=True)
 def app(request):
     parent = os.path.dirname(__file__)
+    #Use the test data as the application's data
     data_path = os.path.join(parent, 'test_data')
     app = create_app({
         'TESTING': True,

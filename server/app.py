@@ -10,7 +10,7 @@ def create_app(settings_overrides=None):
     configure_settings(app, settings_overrides)
     configure_blueprints(app)
 
-    #setup cache
+    #setup the cache
     app.config['CACHE_TYPE'] = 'simple'
     cache.init_app(app)
     with app.app_context():

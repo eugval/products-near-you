@@ -1,3 +1,42 @@
+Eugene's comments
+=================
+To run the app locally:
+
+1. Run the virtualev and install the requirements listed in requirements.txt
+
+2. Activate the server
+```
+$ python runserver.py
+
+```
+Make sure it runs runs on port 5000.
+Wait for the cache to load.
+This is repeated twice on startup because of the reloader which monitors changes
+on source files to help with development. This can be deactivated
+using the use_reloader=False option in Flask's app.run() function.
+
+3. Activate the client
+```
+$ cd client
+$ python -m SimpleHTTPServer
+
+```
+Make sure it runs on port 8000.
+
+4. Use the app.
+
+
+To run the tests:
+
+1. Make sure all requirements are installed
+
+2. run
+```
+$ cd tests
+$ ./run_tests_with_coverage
+
+```
+
 Products Near You
 =================
 
